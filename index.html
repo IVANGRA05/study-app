@@ -36,17 +36,6 @@
       
       <!-- TAB ESAMI -->
       <div v-show="tab === 'esami'" class="space-y-6">
-        
-        <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <span class="text-3xl">🔥</span>
-            <div>
-              <h3 class="font-bold text-sm">Streak di Studio</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Giorni consecutivi di attività</p>
-            </div>
-          </div>
-          <span class="text-2xl font-black text-amber-500">{{ streakDays }} giorni</span>
-        </div>
 
         <div class="flex justify-between items-center">
           <h2 class="text-xl font-bold">I tuoi Esami</h2>
@@ -240,7 +229,6 @@
         const showAddNote = ref(false);
         const newNoteName = ref('');
 
-        const streakDays = ref(1);
         const loadingDb = ref(true);
         const isSyncing = ref(false);
         const showAddExam = ref(false);
@@ -257,7 +245,7 @@
               await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
-                body: JSON.stringify({ exams: exams.value, folders: folders, lastStudy: new Date().toISOString(), streak: streakDays.value })
+                body: JSON.stringify({ exams: exams.value, folders: folders, lastStudy: new Date().toISOString() })
               });
             } catch(e) { console.error("Errore salvataggio", e); }
             isSyncing.value = false;
@@ -289,17 +277,6 @@
                     }
                   } else if (data.record.notes) {
                     folders['Generale'] = { 'Nota Principale': data.record.notes };
-                  }
-                  
-                  if (data.record.lastStudy) {
-                    const lastDate = new Date(data.record.lastStudy);
-                    const today = new Date();
-                    const diffTime = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-                    if (diffTime === 0 || diffTime === 1) {
-                      streakDays.value = (data.record.streak || 1) + (diffTime === 1 ? 1 : 0);
-                    } else if (diffTime > 1) {
-                      streakDays.value = 1;
-                    }
                   }
                 }
               }
@@ -426,7 +403,7 @@
 
         return { 
           isDark, toggleTheme, tab, exams, folders, currentFolder, currentNoteName, showAddFolder, newFolderName, showAddNote, newNoteName, 
-          createFolder, openFolder, deleteFolder, createNote, openNote, deleteNote, streakDays, loadingDb, isSyncing, showAddExam, newExam, addExam, deleteExam, updatePages, getPercentage, getDailyPages, triggerSave,
+          createFolder, openFolder, deleteFolder, createNote, openNote, deleteNote, loadingDb, isSyncing, showAddExam, newExam, addExam, deleteExam, updatePages, getPercentage, getDailyPages, triggerSave,
           pomodoro, formatTime, startPomodoro, stopPomodoro, resetPomodoro, setMode, updateTimerMode
         };
       }
