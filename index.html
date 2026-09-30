@@ -231,16 +231,52 @@
 
       </div>
 
-      <!-- TAB NOTE & DUBBI -->
+      <!-- TAB NOTE & ARCHIVI PER MATERIE -->
       <div v-show="tab === 'note'" class="space-y-4 h-full flex flex-col">
-        <h2 class="text-xl font-bold">Note Veloci & Dubbi 📝</h2>
-        <p class="text-sm text-gray-500">Scrivi qui formule, concetti difficili o riassunti al volo. Tutto si salva nel cloud in automatico!</p>
-        <textarea 
-          v-model="quickNotes" 
-          @input="triggerSave"
-          placeholder="Scrivi qui i tuoi appunti..." 
-          class="w-full flex-1 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 outline-none focus:ring-2 focus:ring-primary text-sm resize-none min-h-[350px]"
-        ></textarea>
+        
+        <!-- Vista Elenco Cartelle -->
+        <div v-if="!currentFolder">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Archivio Note & Materie 📁</h2>
+            <button @click="showAddFolder = !showAddFolder" class="bg-primary text-white px-4 py-2 rounded-xl font-medium shadow-lg shadow-indigo-500/30 hover:bg-indigo-600 transition-all text-sm">
+              <i class="fa-solid fa-folder-plus mr-1"></i> Nuova Cartella
+            </button>
+          </div>
+
+          <div v-if="showAddFolder" class="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 mb-4 flex gap-2">
+            <input v-model="newFolderName" type="text" placeholder="Nome Materia (es. Diritto Privato)" class="flex-1 bg-white dark:bg-darkbg p-3 rounded-xl border border-gray-200 dark:border-gray-700 outline-none text-sm">
+            <button @click="createFolder" class="bg-primary text-white px-5 rounded-xl font-bold text-sm">Crea</button>
+          </div>
+
+          <p v-if="folders.length === 0" class="text-center py-10 text-gray-400 text-sm">Nessuna cartella creata. Clicca su "Nuova Cartella" per iniziare.</p>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div v-for="(folder, fName) in folders" :key="fName" @click="openFolder(fName)" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-primary transition group relative">
+              <button @click.stop="deleteFolder(fName)" class="absolute top-3 right-3 text-gray-300 hover:text-red-500 transition"><i class="fa-solid fa-trash text-xs"></i></button>
+              <i class="fa-solid fa-folder text-amber-400 text-2xl mb-2 group-hover:scale-110 transition"></i>
+              <h3 class="font-bold text-sm text-gray-900 dark:text-white truncate">{{ fName }}</h3>
+              <p class="text-[11px] text-gray-400 mt-1">Nota salvata</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vista Editor della Cartella Selezionata -->
+        <div v-else class="flex flex-col h-full space-y-3 flex-1">
+          <div class="flex items-center justify-between">
+            <button @click="currentFolder = null" class="text-xs bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-200">
+              <i class="fa-solid fa-arrow-left"></i> Indietro alle cartelle
+            </button>
+            <h3 class="font-extrabold text-primary text-base">📁 {{ currentFolder }}</h3>
+          </div>
+
+          <textarea 
+            v-model="folders[currentFolder]" 
+            @input="triggerSave"
+            placeholder="Scrivi qui formule, appunti o riassunti per questa materia..." 
+            class="w-full flex-1 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 outline-none focus:ring-2 focus:ring-primary text-sm resize-none min-h-[380px]"
+          ></textarea>
+        </div>
+
       </div>
 
     </main>
@@ -257,7 +293,7 @@
         <i class="fa-solid fa-brain text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Quiz AI</span>
       </button>
       <button @click="tab = 'note'" class="flex flex-col items-center p-2 rounded-xl w-16 transition" :class="tab === 'note' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
-        <i class="fa-solid fa-note-sticky text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Note</span>
+        <i class="fa-solid fa-folder-open text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Note</span>
       </button>
     </nav>
   </div>
@@ -265,7 +301,6 @@
   <script type="module">
     import { createApp, ref, reactive, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 
-    // 🟢 CHIAVI INSERITE AUTOMATICAMENTE
     const BIN_ID = '6abcbe4affd5d160533e2cde'; 
     const JSONBIN_API_KEY = '$2a$10$Hcnq4I54QFFlseKRV8s7seNBnsl7agBeCE3nP4o/fbnrflOJn1BAC';
     const GEMINI_API_KEY = 'AQ.Ab8RN6LVC_tBQLoIZdHgdKP9N9IUnrW4YNhz4GOWAPlodlJUAg';
@@ -276,7 +311,11 @@
         const tab = ref('esami');
         
         const exams = ref([]);
-        const quickNotes = ref('');
+        const folders = reactive({});
+        const currentFolder = ref(null);
+        const showAddFolder = ref(false);
+        const newFolderName = ref('');
+
         const streakDays = ref(1);
         const loadingDb = ref(true);
         const isSyncing = ref(false);
@@ -294,7 +333,7 @@
               await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
-                body: JSON.stringify({ exams: exams.value, notes: quickNotes.value, lastStudy: new Date().toISOString(), streak: streakDays.value })
+                body: JSON.stringify({ exams: exams.value, folders: folders, lastStudy: new Date().toISOString(), streak: streakDays.value })
               });
             } catch(e) { console.error("Errore salvataggio", e); }
             isSyncing.value = false;
@@ -319,7 +358,13 @@
                   exams.value = data.record;
                 } else {
                   exams.value = data.record.exams || [];
-                  quickNotes.value = data.record.notes || '';
+                  
+                  // Gestione compatibilità vecchie note singole o nuove cartelle
+                  if (data.record.folders) {
+                    Object.assign(folders, data.record.folders);
+                  } else if (data.record.notes) {
+                    folders['Generale'] = data.record.notes;
+                  }
                   
                   if (data.record.lastStudy) {
                     const lastDate = new Date(data.record.lastStudy);
@@ -337,6 +382,29 @@
           }
           loadingDb.value = false;
         });
+
+        const createFolder = () => {
+          if(!newFolderName.value.trim()) return;
+          const name = newFolderName.value.trim();
+          if(!folders[name]) {
+            folders[name] = '';
+          }
+          newFolderName.value = '';
+          showAddFolder.value = false;
+          triggerSave();
+        };
+
+        const openFolder = (name) => {
+          currentFolder.value = name;
+        };
+
+        const deleteFolder = (name) => {
+          if(confirm(`Eliminare la cartella "${name}" e tutte le sue note?`)) {
+            delete folders[name];
+            if(currentFolder.value === name) currentFolder.value = null;
+            triggerSave();
+          }
+        };
 
         const toggleTheme = () => {
           isDark.value = !isDark.value;
@@ -562,7 +630,7 @@ ${extractedText.substring(0, 40000)}`;
         };
 
         return { 
-          isDark, toggleTheme, tab, exams, quickNotes, streakDays, loadingDb, isSyncing, showAddExam, newExam, addExam, deleteExam, updatePages, getPercentage, getDailyPages, triggerSave,
+          isDark, toggleTheme, tab, exams, folders, currentFolder, showAddFolder, newFolderName, createFolder, openFolder, deleteFolder, streakDays, loadingDb, isSyncing, showAddExam, newExam, addExam, deleteExam, updatePages, getPercentage, getDailyPages, triggerSave,
           pomodoro, formatTime, startPomodoro, stopPomodoro, resetPomodoro, setMode, updateTimerMode,
           pdfConfig, isProcessingPdf, pdfProgress, processAndGenerate, quizQuestions, userSelections, resetQuiz, selectAnswer, getOptionClass,
           answeredCount, correctCount, wrongCount, displayedQuestions, reviewingMistakes, startReviewMistakes, exitReviewMistakes
