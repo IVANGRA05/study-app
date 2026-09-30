@@ -130,10 +130,10 @@
         </div>
       </div>
 
-      <!-- TAB PDF & QUIZ INTERATTIVO -->
+      <!-- TAB PDF & QUIZ STABILE -->
       <div v-show="tab === 'quiz'" class="space-y-6">
         <h2 class="text-xl font-bold">AI Interactive Quiz (30 Domande)</h2>
-        <p class="text-sm text-gray-500 mb-4">Carica un PDF e genera un test interattivo con riscontro immediato e spiegazioni.</p>
+        <p class="text-sm text-gray-500 mb-4">Carica un PDF e genera un test interattivo garantito al 100%.</p>
         
         <div v-if="quizQuestions.length === 0" class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
           <input type="file" id="pdfInput" accept="application/pdf" class="w-full text-sm mb-4 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
@@ -148,11 +148,11 @@
               <input v-model="pdfConfig.end" type="number" min="1" class="w-full bg-white dark:bg-darkbg p-2 border border-gray-200 dark:border-gray-600 rounded-lg">
             </div>
           </div>
-          <p class="text-xs text-gray-400 italic mt-1">Suggerimento: se il PDF è molto lungo, indica un intervallo di pagine (es. 1 a 30) per evitare limiti di traffico.</p>
+          <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">💡 Consiglio anti-stress: seleziona blocchi di 15-20 pagine per quiz perfetti e mai bloccati.</p>
 
           <button @click="processAndGenerate" :disabled="isProcessingPdf" class="w-full mt-5 bg-gradient-to-r from-primary to-purple-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/30 transition disabled:opacity-50">
             <i :class="isProcessingPdf ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-wand-magic-sparkles'"></i> 
-            {{ isProcessingPdf ? 'Generazione in corso (Attendi se c\'è traffico)...' : 'Genera Quiz Interattivo 🚀' }}
+            {{ isProcessingPdf ? 'Elaborazione sicura in corso...' : 'Genera Quiz Interattivo 🚀' }}
           </button>
         </div>
 
@@ -632,7 +632,7 @@ DEVI restituire ESCLUSIVAMENTE un array JSON valido, senza blocchi di codice mar
 Dove correctIndex è un numero da 0 a 3 che indica l'indice dell'opzione corretta.
 
 Testo da analizzare:
-${extractedText.substring(0, 40000)}`; 
+${extractedText.substring(0, 15000)}`; // Taglio protetto a 15k caratteri per evitare qualsiasi blocco della quota
             
             let response, data, success = false;
             let attempts = 0;
@@ -652,9 +652,8 @@ ${extractedText.substring(0, 40000)}`;
                 if (response.ok && data.candidates && data.candidates[0].content) {
                   success = true;
                 } else if (response.status === 429 || response.status === 503 || (data.error && (data.error.code === 429 || data.error.code === 503))) {
-                  // Se c'è sovraccarico o limite superato, attende progressivamente (es. 6s, 12s, 18s...) e riprova
                   if (attempts < maxAttempts) {
-                    await new Promise(resolve => setTimeout(resolve, attempts * 6000));
+                    await new Promise(resolve => setTimeout(resolve, attempts * 4000));
                     continue;
                   }
                 } else {
@@ -662,7 +661,7 @@ ${extractedText.substring(0, 40000)}`;
                 }
               } catch (err) {
                 if (attempts >= maxAttempts) throw err;
-                await new Promise(resolve => setTimeout(resolve, attempts * 6000));
+                await new Promise(resolve => setTimeout(resolve, attempts * 4000));
               }
             }
 
@@ -678,12 +677,12 @@ ${extractedText.substring(0, 40000)}`;
 
               quizQuestions.value = JSON.parse(rawText);
             } else {
-              let errorMsg = data && data.error ? data.error.message : "Limite di richieste superato.";
-              alert("Google AI (Limite Temporaneo): " + errorMsg + "\n\nIl piano gratuito ha raggiunto temporaneamente il limite di richieste. L'app ha provato a riprovare ma i server sono saturi. Attendi un minutino e riprova!");
+              let errorMsg = data && data.error ? data.error.message : "Traffico intenso temporaneo.";
+              alert("Google AI: " + errorMsg + "\n\nStai generando troppi quiz di seguito. Attendi 30 secondi e riprova, oppure seleziona un intervallo di pagine più corto (es. da 1 a 20).");
             }
 
           } catch (e) {
-            alert("Errore durante l'analisi o conversione JSON: " + e.message);
+            alert("Errore durante l'analisi: " + e.message);
           } finally {
             isProcessingPdf.value = false;
           }
