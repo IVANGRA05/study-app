@@ -118,7 +118,7 @@
         </div>
       </div>
 
-      <!-- TAB PDF & QUIZ INTERATTIVO (30 DOMANDE) -->
+      <!-- TAB PDF & QUIZ INTERATTIVO (30 DOMANDE + PUNTEGGIO LIVE) -->
       <div v-show="tab === 'quiz'" class="space-y-6">
         <h2 class="text-xl font-bold">AI Interactive Quiz (30 Domande)</h2>
         <p class="text-sm text-gray-500 mb-4">Carica un PDF e genera un test interattivo di 30 domande con riscontro immediato e spiegazioni.</p>
@@ -145,10 +145,29 @@
           </button>
         </div>
 
-        <!-- Visualizzatore Quiz Interattivo -->
+        <!-- Visualizzatore Quiz Interattivo con Punteggio Live -->
         <div v-else class="space-y-6">
-          <div class="flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800">
-            <span class="font-bold text-primary">Test da 30 Domande pronto!</span>
+          
+          <!-- BANNER PUNTEGGIO LIVE -->
+          <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex justify-around items-center text-center">
+            <div>
+              <span class="block text-2xl font-black text-green-600">{{ correctCount }}</span>
+              <span class="text-[10px] font-bold text-gray-400 uppercase">Corrette</span>
+            </div>
+            <div class="h-8 w-[1px] bg-gray-100 dark:bg-gray-700"></div>
+            <div>
+              <span class="block text-2xl font-black text-red-500">{{ wrongCount }}</span>
+              <span class="text-[10px] font-bold text-gray-400 uppercase">Sbagliate</span>
+            </div>
+            <div class="h-8 w-[1px] bg-gray-100 dark:bg-gray-700"></div>
+            <div>
+              <span class="block text-2xl font-black text-primary">{{ answeredCount }} / {{ quizQuestions.length }}</span>
+              <span class="text-[10px] font-bold text-gray-400 uppercase">Completate</span>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800">
+            <span class="text-xs font-bold text-primary">Test interattivo attivo</span>
             <button @click="resetQuiz" class="text-xs bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 font-semibold hover:bg-gray-100">Cambia PDF / Ricomincia</button>
           </div>
 
@@ -199,7 +218,7 @@
   </div>
 
   <script type="module">
-    import { createApp, ref, reactive, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    import { createApp, ref, reactive, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 
     // 🔴 INSERISCI QUI LE TUE 3 CHIAVI (Righe 204, 205, 206)
     const BIN_ID = '6abcbe4affd5d160533e2cde'; 
@@ -317,11 +336,30 @@
         const stopPomodoro = () => { pomodoro.value.isRunning = false; clearInterval(pomodoro.value.timer); };
         const resetPomodoro = () => updateTimerMode();
 
+        // QUIZ INTERATTIVO & STATISTICHE LIVE
         const pdfConfig = ref({ start: null, end: null });
         const isProcessingPdf = ref(false);
         const pdfProgress = ref(0);
         const quizQuestions = ref([]);
         const userSelections = reactive({});
+
+        const answeredCount = computed(() => Object.keys(userSelections).length);
+        
+        const correctCount = computed(() => {
+          let count = 0;
+          for (const qIndex in userSelections) {
+            if (userSelections[qIndex] === quizQuestions.value[qIndex].correctIndex) count++;
+          }
+          return count;
+        });
+
+        const wrongCount = computed(() => {
+          let count = 0;
+          for (const qIndex in userSelections) {
+            if (userSelections[qIndex] !== quizQuestions.value[qIndex].correctIndex) count++;
+          }
+          return count;
+        });
 
         const resetQuiz = () => {
           quizQuestions.value = [];
@@ -396,7 +434,6 @@ ${extractedText.substring(0, 40000)}`;
             let attempts = 0;
             const maxAttempts = 4;
 
-            // Sistema di tentativi automatici (gestisce l'errore 503 di sovraccarico Google)
             while (attempts < maxAttempts && !success) {
               attempts++;
               try {
@@ -450,7 +487,8 @@ ${extractedText.substring(0, 40000)}`;
         return { 
           isDark, toggleTheme, tab, exams, loadingDb, isSyncing, showAddExam, newExam, addExam, deleteExam, updatePages, getPercentage, getDailyPages,
           pomodoro, formatTime, startPomodoro, stopPomodoro, resetPomodoro, setMode, updateTimerMode,
-          pdfConfig, isProcessingPdf, pdfProgress, processAndGenerate, quizQuestions, userSelections, resetQuiz, selectAnswer, getOptionClass
+          pdfConfig, isProcessingPdf, pdfProgress, processAndGenerate, quizQuestions, userSelections, resetQuiz, selectAnswer, getOptionClass,
+          answeredCount, correctCount, wrongCount
         };
       }
     }).mount('#app');
