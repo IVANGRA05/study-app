@@ -43,7 +43,6 @@
       <!-- TAB ESAMI -->
       <div v-show="tab === 'esami'" class="space-y-6">
         
-        <!-- STREAK BANNER -->
         <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center justify-between">
           <div class="flex items-center gap-3">
             <span class="text-3xl">🔥</span>
@@ -131,12 +130,11 @@
         </div>
       </div>
 
-      <!-- TAB PDF & QUIZ INTERATTIVO (30 DOMANDE + RIPASSA ERRORI) -->
+      <!-- TAB PDF & QUIZ INTERATTIVO -->
       <div v-show="tab === 'quiz'" class="space-y-6">
         <h2 class="text-xl font-bold">AI Interactive Quiz (30 Domande)</h2>
         <p class="text-sm text-gray-500 mb-4">Carica un PDF e genera un test interattivo con riscontro immediato e spiegazioni.</p>
         
-        <!-- Configurazione / Caricamento -->
         <div v-if="quizQuestions.length === 0" class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
           <input type="file" id="pdfInput" accept="application/pdf" class="w-full text-sm mb-4 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
           
@@ -150,18 +148,16 @@
               <input v-model="pdfConfig.end" type="number" min="1" class="w-full bg-white dark:bg-darkbg p-2 border border-gray-200 dark:border-gray-600 rounded-lg">
             </div>
           </div>
-          <p class="text-xs text-gray-400 italic mt-1">Lascia vuoto per analizzare tutto il libro.</p>
+          <p class="text-xs text-gray-400 italic mt-1">Suggerimento: se il PDF è molto lungo, indica un intervallo di pagine (es. 1 a 30) per evitare limiti di traffico.</p>
 
           <button @click="processAndGenerate" :disabled="isProcessingPdf" class="w-full mt-5 bg-gradient-to-r from-primary to-purple-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/30 transition disabled:opacity-50">
             <i :class="isProcessingPdf ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-wand-magic-sparkles'"></i> 
-            {{ isProcessingPdf ? 'Generazione 30 quiz in corso (' + pdfProgress + '%)...' : 'Genera Quiz Interattivo 🚀' }}
+            {{ isProcessingPdf ? 'Generazione in corso (Attendi se c\'è traffico)...' : 'Genera Quiz Interattivo 🚀' }}
           </button>
         </div>
 
-        <!-- Visualizzatore Quiz Interattivo con Punteggio Live & Ripassa Errori -->
         <div v-else class="space-y-6">
           
-          <!-- BANNER PUNTEGGIO LIVE -->
           <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex justify-around items-center text-center">
             <div>
               <span class="block text-2xl font-black text-green-600">{{ correctCount }}</span>
@@ -179,11 +175,10 @@
             </div>
           </div>
 
-          <!-- BOTTONE RIPASSA ERRORI (Compare a test completato) -->
           <div v-if="answeredCount === quizQuestions.length && wrongCount > 0 && !reviewingMistakes" class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-800 flex justify-between items-center">
             <div>
-              Hai completato il test! 
-              <span class="block text-xs text-amber-600 dark:text-amber-400 font-semibold">Vuoi concentrarti solo sugli errori?</span>
+              Test completato! 
+              <span class="block text-xs text-amber-600 dark:text-amber-400 font-semibold">Vuoi ripassare solo gli errori?</span>
             </div>
             <button @click="startReviewMistakes" class="bg-amber-500 text-white font-bold px-4 py-2 rounded-xl text-sm shadow hover:bg-amber-600 transition">
               🔄 Ripassa Errori ({{ wrongCount }})
@@ -196,11 +191,10 @@
           </div>
 
           <div class="flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800">
-            <span class="text-xs font-bold text-primary">Test interattivo attivo</span>
+            <span class="text-xs font-bold text-primary">Test attivo</span>
             <button @click="resetQuiz" class="text-xs bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 font-semibold hover:bg-gray-100">Cambia PDF / Ricomincia</button>
           </div>
 
-          <!-- Singola Domanda -->
           <div v-for="(q, qIndex) in displayedQuestions" :key="q.originalIndex" class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
             <h4 class="font-bold text-base mb-3 text-gray-900 dark:text-white">Domanda {{ q.originalIndex + 1 }}: {{ q.question }}</h4>
             
@@ -219,7 +213,6 @@
               </button>
             </div>
 
-            <!-- Spiegazione immediata -->
             <div v-if="userSelections[q.originalIndex] !== undefined" class="mt-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-xs border border-gray-200 dark:border-gray-700">
               <span class="font-bold block mb-1" :class="userSelections[q.originalIndex] === q.correctIndex ? 'text-green-600' : 'text-red-600'">
                 {{ userSelections[q.originalIndex] === q.correctIndex ? 'Corretto! 🎉' : 'Sbagliato ❌' }}
@@ -231,10 +224,9 @@
 
       </div>
 
-      <!-- TAB NOTE & ARCHIVI MULTI-NOTA -->
+      <!-- TAB NOTE -->
       <div v-show="tab === 'note'" class="space-y-4 h-full flex flex-col">
         
-        <!-- Vista Elenco Cartelle -->
         <div v-if="!currentFolder">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold">Archivio Materie 📁</h2>
@@ -244,23 +236,22 @@
           </div>
 
           <div v-if="showAddFolder" class="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 mb-4 flex gap-2">
-            <input v-model="newFolderName" type="text" placeholder="Nome Materia (es. Diritto Privato)" class="flex-1 bg-white dark:bg-darkbg p-3 rounded-xl border border-gray-200 dark:border-gray-700 outline-none text-sm">
+            <input v-model="newFolderName" type="text" placeholder="Nome Materia" class="flex-1 bg-white dark:bg-darkbg p-3 rounded-xl border border-gray-200 dark:border-gray-700 outline-none text-sm">
             <button @click="createFolder" class="bg-primary text-white px-5 rounded-xl font-bold text-sm">Crea</button>
           </div>
 
-          <p v-if="Object.keys(folders).length === 0" class="text-center py-10 text-gray-400 text-sm">Nessuna cartella creata. Clicca su "Nuova Cartella" per iniziare.</p>
+          <p v-if="Object.keys(folders).length === 0" class="text-center py-10 text-gray-400 text-sm">Nessuna cartella creata.</p>
 
           <div class="grid grid-cols-2 gap-3">
             <div v-for="(notesObj, fName) in folders" :key="fName" @click="openFolder(fName)" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-primary transition group relative">
               <button @click.stop="deleteFolder(fName)" class="absolute top-3 right-3 text-gray-300 hover:text-red-500 transition"><i class="fa-solid fa-trash text-xs"></i></button>
               <i class="fa-solid fa-folder text-amber-400 text-2xl mb-2 group-hover:scale-110 transition"></i>
               <h3 class="font-bold text-sm text-gray-900 dark:text-white truncate">{{ fName }}</h3>
-              <p class="text-[11px] text-gray-400 mt-1">{{ Object.keys(notesObj || {}).length }} note salvate</p>
+              <p class="text-[11px] text-gray-400 mt-1">{{ Object.keys(notesObj || {}).length }} note</p>
             </div>
           </div>
         </div>
 
-        <!-- Vista Elenco Note all'interno della Cartella -->
         <div v-else-if="!currentNoteName" class="space-y-4 flex-1 flex flex-col">
           <div class="flex items-center justify-between">
             <button @click="currentFolder = null" class="text-xs bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-200">
@@ -274,11 +265,11 @@
           <h3 class="font-extrabold text-primary text-lg">📁 {{ currentFolder }}</h3>
 
           <div v-if="showAddNote" class="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 flex gap-2">
-            <input v-model="newNoteName" type="text" placeholder="Titolo nota (es. Capitolo 1)" class="flex-1 bg-white dark:bg-darkbg p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 outline-none text-sm">
+            <input v-model="newNoteName" type="text" placeholder="Titolo nota" class="flex-1 bg-white dark:bg-darkbg p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 outline-none text-sm">
             <button @click="createNote" class="bg-primary text-white px-4 rounded-xl font-bold text-xs">Crea</button>
           </div>
 
-          <p v-if="!folders[currentFolder] || Object.keys(folders[currentFolder]).length === 0" class="text-center py-10 text-gray-400 text-sm">Nessuna nota in questa cartella. Crea la prima!</p>
+          <p v-if="!folders[currentFolder] || Object.keys(folders[currentFolder]).length === 0" class="text-center py-10 text-gray-400 text-sm">Nessuna nota in questa cartella.</p>
 
           <div class="space-y-2">
             <div v-for="(content, nTitle) in folders[currentFolder]" :key="nTitle" @click="openNote(nTitle)" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center cursor-pointer hover:border-primary transition">
@@ -291,7 +282,6 @@
           </div>
         </div>
 
-        <!-- Vista Editor della Singola Nota -->
         <div v-else class="flex flex-col h-full space-y-3 flex-1">
           <div class="flex items-center justify-between">
             <button @click="currentNoteName = null" class="text-xs bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-200">
@@ -303,7 +293,7 @@
           <textarea 
             v-model="folders[currentFolder][currentNoteName]" 
             @input="triggerSave"
-            placeholder="Scrivi qui i tuoi appunti, formule o riassunti..." 
+            placeholder="Scrivi qui i tuoi appunti..." 
             class="w-full flex-1 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 outline-none focus:ring-2 focus:ring-primary text-sm resize-none min-h-[380px]"
           ></textarea>
         </div>
@@ -312,7 +302,6 @@
 
     </main>
 
-    <!-- Bottom Navigation Bar a 4 Pulsanti -->
     <nav class="absolute bottom-0 w-full bg-white/80 dark:bg-darkcard/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 flex justify-around p-2 pb-6">
       <button @click="tab = 'esami'" class="flex flex-col items-center p-2 rounded-xl w-16 transition" :class="tab === 'esami' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
         <i class="fa-solid fa-book-open text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Esami</span>
@@ -332,7 +321,6 @@
   <script type="module">
     import { createApp, ref, reactive, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 
-    // 🟢 CHIAVI INTEGRATE AUTOMATICAMENTE
     const BIN_ID = '6abcbe4affd5d160533e2cde'; 
     const JSONBIN_API_KEY = '$2a$10$Hcnq4I54QFFlseKRV8s7seNBnsl7agBeCE3nP4o/fbnrflOJn1BAC';
     const GEMINI_API_KEY = 'AQ.Ab8RN6LVC_tBQLoIZdHgdKP9N9IUnrW4YNhz4GOWAPlodlJUAg';
@@ -396,7 +384,6 @@
                   exams.value = data.record.exams || [];
                   
                   if (data.record.folders) {
-                    // Controllo compatibilità vecchia struttura stringa -> oggetto note
                     for (const f in data.record.folders) {
                       if (typeof data.record.folders[f] === 'string') {
                         folders[f] = { 'Appunti Principali': data.record.folders[f] };
@@ -649,7 +636,7 @@ ${extractedText.substring(0, 40000)}`;
             
             let response, data, success = false;
             let attempts = 0;
-            const maxAttempts = 4;
+            const maxAttempts = 5;
 
             while (attempts < maxAttempts && !success) {
               attempts++;
@@ -664,9 +651,10 @@ ${extractedText.substring(0, 40000)}`;
                 
                 if (response.ok && data.candidates && data.candidates[0].content) {
                   success = true;
-                } else if (response.status === 503 || (data.error && data.error.code === 503)) {
+                } else if (response.status === 429 || response.status === 503 || (data.error && (data.error.code === 429 || data.error.code === 503))) {
+                  // Se c'è sovraccarico o limite superato, attende progressivamente (es. 6s, 12s, 18s...) e riprova
                   if (attempts < maxAttempts) {
-                    await new Promise(resolve => setTimeout(resolve, attempts * 2500));
+                    await new Promise(resolve => setTimeout(resolve, attempts * 6000));
                     continue;
                   }
                 } else {
@@ -674,7 +662,7 @@ ${extractedText.substring(0, 40000)}`;
                 }
               } catch (err) {
                 if (attempts >= maxAttempts) throw err;
-                await new Promise(resolve => setTimeout(resolve, attempts * 2500));
+                await new Promise(resolve => setTimeout(resolve, attempts * 6000));
               }
             }
 
@@ -690,8 +678,8 @@ ${extractedText.substring(0, 40000)}`;
 
               quizQuestions.value = JSON.parse(rawText);
             } else {
-              let errorMsg = data && data.error ? data.error.message : "Server temporaneamente sovraccarico.";
-              alert("Errore Google AI: " + errorMsg + "\n\nI server di Google sono molto trafficati in questo momento. Riprova tra qualche istante!");
+              let errorMsg = data && data.error ? data.error.message : "Limite di richieste superato.";
+              alert("Google AI (Limite Temporaneo): " + errorMsg + "\n\nIl piano gratuito ha raggiunto temporaneamente il limite di richieste. L'app ha provato a riprovare ma i server sono saturi. Attendi un minutino e riprova!");
             }
 
           } catch (e) {
