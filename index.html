@@ -231,13 +231,13 @@
 
       </div>
 
-      <!-- TAB NOTE & ARCHIVI PER MATERIE -->
+      <!-- TAB NOTE & ARCHIVI MULTI-NOTA -->
       <div v-show="tab === 'note'" class="space-y-4 h-full flex flex-col">
         
         <!-- Vista Elenco Cartelle -->
         <div v-if="!currentFolder">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">Archivio Note & Materie 📁</h2>
+            <h2 class="text-xl font-bold">Archivio Materie 📁</h2>
             <button @click="showAddFolder = !showAddFolder" class="bg-primary text-white px-4 py-2 rounded-xl font-medium shadow-lg shadow-indigo-500/30 hover:bg-indigo-600 transition-all text-sm">
               <i class="fa-solid fa-folder-plus mr-1"></i> Nuova Cartella
             </button>
@@ -248,31 +248,62 @@
             <button @click="createFolder" class="bg-primary text-white px-5 rounded-xl font-bold text-sm">Crea</button>
           </div>
 
-          <p v-if="folders.length === 0" class="text-center py-10 text-gray-400 text-sm">Nessuna cartella creata. Clicca su "Nuova Cartella" per iniziare.</p>
+          <p v-if="Object.keys(folders).length === 0" class="text-center py-10 text-gray-400 text-sm">Nessuna cartella creata. Clicca su "Nuova Cartella" per iniziare.</p>
 
           <div class="grid grid-cols-2 gap-3">
-            <div v-for="(folder, fName) in folders" :key="fName" @click="openFolder(fName)" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-primary transition group relative">
+            <div v-for="(notesObj, fName) in folders" :key="fName" @click="openFolder(fName)" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-primary transition group relative">
               <button @click.stop="deleteFolder(fName)" class="absolute top-3 right-3 text-gray-300 hover:text-red-500 transition"><i class="fa-solid fa-trash text-xs"></i></button>
               <i class="fa-solid fa-folder text-amber-400 text-2xl mb-2 group-hover:scale-110 transition"></i>
               <h3 class="font-bold text-sm text-gray-900 dark:text-white truncate">{{ fName }}</h3>
-              <p class="text-[11px] text-gray-400 mt-1">Nota salvata</p>
+              <p class="text-[11px] text-gray-400 mt-1">{{ Object.keys(notesObj || {}).length }} note salvate</p>
             </div>
           </div>
         </div>
 
-        <!-- Vista Editor della Cartella Selezionata -->
-        <div v-else class="flex flex-col h-full space-y-3 flex-1">
+        <!-- Vista Elenco Note all'interno della Cartella -->
+        <div v-else-if="!currentNoteName" class="space-y-4 flex-1 flex flex-col">
           <div class="flex items-center justify-between">
             <button @click="currentFolder = null" class="text-xs bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-200">
-              <i class="fa-solid fa-arrow-left"></i> Indietro alle cartelle
+              <i class="fa-solid fa-arrow-left"></i> Cartelle
             </button>
-            <h3 class="font-extrabold text-primary text-base">📁 {{ currentFolder }}</h3>
+            <button @click="showAddNote = !showAddNote" class="bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold">
+              <i class="fa-solid fa-plus mr-1"></i> Nuova Nota
+            </button>
+          </div>
+
+          <h3 class="font-extrabold text-primary text-lg">📁 {{ currentFolder }}</h3>
+
+          <div v-if="showAddNote" class="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 flex gap-2">
+            <input v-model="newNoteName" type="text" placeholder="Titolo nota (es. Capitolo 1)" class="flex-1 bg-white dark:bg-darkbg p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 outline-none text-sm">
+            <button @click="createNote" class="bg-primary text-white px-4 rounded-xl font-bold text-xs">Crea</button>
+          </div>
+
+          <p v-if="!folders[currentFolder] || Object.keys(folders[currentFolder]).length === 0" class="text-center py-10 text-gray-400 text-sm">Nessuna nota in questa cartella. Crea la prima!</p>
+
+          <div class="space-y-2">
+            <div v-for="(content, nTitle) in folders[currentFolder]" :key="nTitle" @click="openNote(nTitle)" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center cursor-pointer hover:border-primary transition">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-file-lines text-primary"></i>
+                <span class="font-bold text-sm">{{ nTitle }}</span>
+              </div>
+              <button @click.stop="deleteNote(nTitle)" class="text-gray-300 hover:text-red-500 p-2"><i class="fa-solid fa-trash text-xs"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vista Editor della Singola Nota -->
+        <div v-else class="flex flex-col h-full space-y-3 flex-1">
+          <div class="flex items-center justify-between">
+            <button @click="currentNoteName = null" class="text-xs bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-200">
+              <i class="fa-solid fa-arrow-left"></i> Elenco note
+            </button>
+            <h3 class="font-extrabold text-primary text-sm">📝 {{ currentNoteName }}</h3>
           </div>
 
           <textarea 
-            v-model="folders[currentFolder]" 
+            v-model="folders[currentFolder][currentNoteName]" 
             @input="triggerSave"
-            placeholder="Scrivi qui formule, appunti o riassunti per questa materia..." 
+            placeholder="Scrivi qui i tuoi appunti, formule o riassunti..." 
             class="w-full flex-1 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 outline-none focus:ring-2 focus:ring-primary text-sm resize-none min-h-[380px]"
           ></textarea>
         </div>
@@ -301,6 +332,7 @@
   <script type="module">
     import { createApp, ref, reactive, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 
+    // 🟢 CHIAVI INTEGRATE AUTOMATICAMENTE
     const BIN_ID = '6abcbe4affd5d160533e2cde'; 
     const JSONBIN_API_KEY = '$2a$10$Hcnq4I54QFFlseKRV8s7seNBnsl7agBeCE3nP4o/fbnrflOJn1BAC';
     const GEMINI_API_KEY = 'AQ.Ab8RN6LVC_tBQLoIZdHgdKP9N9IUnrW4YNhz4GOWAPlodlJUAg';
@@ -313,8 +345,12 @@
         const exams = ref([]);
         const folders = reactive({});
         const currentFolder = ref(null);
+        const currentNoteName = ref(null);
+        
         const showAddFolder = ref(false);
         const newFolderName = ref('');
+        const showAddNote = ref(false);
+        const newNoteName = ref('');
 
         const streakDays = ref(1);
         const loadingDb = ref(true);
@@ -359,11 +395,17 @@
                 } else {
                   exams.value = data.record.exams || [];
                   
-                  // Gestione compatibilità vecchie note singole o nuove cartelle
                   if (data.record.folders) {
-                    Object.assign(folders, data.record.folders);
+                    // Controllo compatibilità vecchia struttura stringa -> oggetto note
+                    for (const f in data.record.folders) {
+                      if (typeof data.record.folders[f] === 'string') {
+                        folders[f] = { 'Appunti Principali': data.record.folders[f] };
+                      } else {
+                        folders[f] = data.record.folders[f];
+                      }
+                    }
                   } else if (data.record.notes) {
-                    folders['Generale'] = data.record.notes;
+                    folders['Generale'] = { 'Nota Principale': data.record.notes };
                   }
                   
                   if (data.record.lastStudy) {
@@ -387,7 +429,7 @@
           if(!newFolderName.value.trim()) return;
           const name = newFolderName.value.trim();
           if(!folders[name]) {
-            folders[name] = '';
+            folders[name] = {};
           }
           newFolderName.value = '';
           showAddFolder.value = false;
@@ -396,12 +438,42 @@
 
         const openFolder = (name) => {
           currentFolder.value = name;
+          currentNoteName.value = null;
         };
 
         const deleteFolder = (name) => {
           if(confirm(`Eliminare la cartella "${name}" e tutte le sue note?`)) {
             delete folders[name];
-            if(currentFolder.value === name) currentFolder.value = null;
+            if(currentFolder.value === name) {
+              currentFolder.value = null;
+              currentNoteName.value = null;
+            }
+            triggerSave();
+          }
+        };
+
+        const createNote = () => {
+          if(!newNoteName.value.trim() || !currentFolder.value) return;
+          const title = newNoteName.value.trim();
+          if(!folders[currentFolder.value]) {
+            folders[currentFolder.value] = {};
+          }
+          if(!folders[currentFolder.value][title]) {
+            folders[currentFolder.value][title] = '';
+          }
+          newNoteName.value = '';
+          showAddNote.value = false;
+          triggerSave();
+        };
+
+        const openNote = (title) => {
+          currentNoteName.value = title;
+        };
+
+        const deleteNote = (title) => {
+          if(confirm(`Eliminare la nota "${title}"?`)) {
+            delete folders[currentFolder.value][title];
+            if(currentNoteName.value === title) currentNoteName.value = null;
             triggerSave();
           }
         };
@@ -630,7 +702,8 @@ ${extractedText.substring(0, 40000)}`;
         };
 
         return { 
-          isDark, toggleTheme, tab, exams, folders, currentFolder, showAddFolder, newFolderName, createFolder, openFolder, deleteFolder, streakDays, loadingDb, isSyncing, showAddExam, newExam, addExam, deleteExam, updatePages, getPercentage, getDailyPages, triggerSave,
+          isDark, toggleTheme, tab, exams, folders, currentFolder, currentNoteName, showAddFolder, newFolderName, showAddNote, newNoteName, 
+          createFolder, openFolder, deleteFolder, createNote, openNote, deleteNote, streakDays, loadingDb, isSyncing, showAddExam, newExam, addExam, deleteExam, updatePages, getPercentage, getDailyPages, triggerSave,
           pomodoro, formatTime, startPomodoro, stopPomodoro, resetPomodoro, setMode, updateTimerMode,
           pdfConfig, isProcessingPdf, pdfProgress, processAndGenerate, quizQuestions, userSelections, resetQuiz, selectAnswer, getOptionClass,
           answeredCount, correctCount, wrongCount, displayedQuestions, reviewingMistakes, startReviewMistakes, exitReviewMistakes
