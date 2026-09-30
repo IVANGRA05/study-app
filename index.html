@@ -31,17 +31,30 @@
     <header class="px-6 py-5 flex justify-between items-center border-b border-gray-100 dark:border-gray-800">
       <div class="flex items-center gap-3">
         <h1 class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">Study<span class="text-primary">Space</span></h1>
-        <span v-if="isSyncing" class="text-xs bg-indigo-100 dark:bg-indigo-900 text-primary px-2 py-1 rounded-full animate-pulse">Salvataggio Cloud...</span>
+        <span v-if="isSyncing" class="text-xs bg-indigo-100 dark:bg-indigo-900 text-primary px-2 py-1 rounded-full animate-pulse">Cloud...</span>
       </div>
       <button @click="toggleTheme" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-primary transition-colors">
         <i :class="isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'"></i>
       </button>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-6 pb-24">
+    <main class="flex-1 overflow-y-auto p-6 pb-28">
       
       <!-- TAB ESAMI -->
       <div v-show="tab === 'esami'" class="space-y-6">
+        
+        <!-- STREAK BANNER -->
+        <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">🔥</span>
+            <div>
+              <h3 class="font-bold text-sm">Streak di Studio</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Giorni consecutivi di attività</p>
+            </div>
+          </div>
+          <span class="text-2xl font-black text-amber-500">{{ streakDays }} giorni</span>
+        </div>
+
         <div class="flex justify-between items-center">
           <h2 class="text-xl font-bold">I tuoi Esami</h2>
           <button @click="showAddExam = !showAddExam" class="bg-primary text-white px-4 py-2 rounded-xl font-medium shadow-lg shadow-indigo-500/30 hover:bg-indigo-600 transition-all">
@@ -87,7 +100,7 @@
       </div>
 
       <!-- TAB POMODORO -->
-      <div v-show="tab === 'pomodoro'" class="h-full flex flex-col items-center justify-center -mt-10">
+      <div v-show="tab === 'pomodoro'" class="h-full flex flex-col items-center justify-center -mt-6">
         <div class="w-64 h-64 rounded-full border-8 border-gray-50 dark:border-gray-800 shadow-inner flex flex-col items-center justify-center relative mb-8" :class="pomodoro.mode === 'work' ? 'bg-primary/5 dark:bg-primary/10' : 'bg-green-500/5 dark:bg-green-500/10'">
           <span class="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-2">{{ pomodoro.mode === 'work' ? 'Sessione' : 'Pausa' }}</span>
           <span class="text-6xl font-bold font-mono text-gray-800 dark:text-white tracking-tighter">{{ formatTime(pomodoro.timeLeft) }}</span>
@@ -118,10 +131,10 @@
         </div>
       </div>
 
-      <!-- TAB PDF & QUIZ INTERATTIVO (30 DOMANDE + PUNTEGGIO LIVE) -->
+      <!-- TAB PDF & QUIZ INTERATTIVO (30 DOMANDE + RIPASSA ERRORI) -->
       <div v-show="tab === 'quiz'" class="space-y-6">
         <h2 class="text-xl font-bold">AI Interactive Quiz (30 Domande)</h2>
-        <p class="text-sm text-gray-500 mb-4">Carica un PDF e genera un test interattivo di 30 domande con riscontro immediato e spiegazioni.</p>
+        <p class="text-sm text-gray-500 mb-4">Carica un PDF e genera un test interattivo con riscontro immediato e spiegazioni.</p>
         
         <!-- Configurazione / Caricamento -->
         <div v-if="quizQuestions.length === 0" class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
@@ -145,7 +158,7 @@
           </button>
         </div>
 
-        <!-- Visualizzatore Quiz Interattivo con Punteggio Live -->
+        <!-- Visualizzatore Quiz Interattivo con Punteggio Live & Ripassa Errori -->
         <div v-else class="space-y-6">
           
           <!-- BANNER PUNTEGGIO LIVE -->
@@ -166,34 +179,50 @@
             </div>
           </div>
 
+          <!-- BOTTONE RIPASSA ERRORI (Compare a test completato) -->
+          <div v-if="answeredCount === quizQuestions.length && wrongCount > 0 && !reviewingMistakes" class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-800 flex justify-between items-center">
+            <div>
+              Hai completato il test! 
+              <span class="block text-xs text-amber-600 dark:text-amber-400 font-semibold">Vuoi concentrarti solo sugli errori?</span>
+            </div>
+            <button @click="startReviewMistakes" class="bg-amber-500 text-white font-bold px-4 py-2 rounded-xl text-sm shadow hover:bg-amber-600 transition">
+              🔄 Ripassa Errori ({{ wrongCount }})
+            </button>
+          </div>
+
+          <div v-if="reviewingMistakes" class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-2xl border border-purple-200 dark:border-purple-800 flex justify-between items-center">
+            <span class="font-bold text-purple-700 dark:text-purple-300 text-sm">⚡ Modalità Ripasso Errori Attiva</span>
+            <button @click="exitReviewMistakes" class="text-xs bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border font-semibold">Mostra Tutte</button>
+          </div>
+
           <div class="flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800">
             <span class="text-xs font-bold text-primary">Test interattivo attivo</span>
             <button @click="resetQuiz" class="text-xs bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 font-semibold hover:bg-gray-100">Cambia PDF / Ricomincia</button>
           </div>
 
           <!-- Singola Domanda -->
-          <div v-for="(q, qIndex) in quizQuestions" :key="qIndex" class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <h4 class="font-bold text-base mb-3 text-gray-900 dark:text-white">Domanda {{ qIndex + 1 }}: {{ q.question }}</h4>
+          <div v-for="(q, qIndex) in displayedQuestions" :key="q.originalIndex" class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <h4 class="font-bold text-base mb-3 text-gray-900 dark:text-white">Domanda {{ q.originalIndex + 1 }}: {{ q.question }}</h4>
             
             <div class="space-y-2 mb-3">
               <button 
                 v-for="(option, optIndex) in q.options" 
                 :key="optIndex"
-                @click="selectAnswer(qIndex, optIndex)"
-                :disabled="userSelections[qIndex] !== undefined"
+                @click="selectAnswer(q.originalIndex, optIndex)"
+                :disabled="userSelections[q.originalIndex] !== undefined"
                 class="w-full text-left p-3 rounded-xl text-sm font-medium border transition flex justify-between items-center"
-                :class="getOptionClass(qIndex, optIndex)"
+                :class="getOptionClass(q.originalIndex, optIndex)"
               >
                 <span>{{ option }}</span>
-                <i v-if="userSelections[qIndex] !== undefined && optIndex === q.correctIndex" class="fa-solid fa-check text-green-600"></i>
-                <i v-if="userSelections[qIndex] === optIndex && optIndex !== q.correctIndex" class="fa-solid fa-xmark text-red-600"></i>
+                <i v-if="userSelections[q.originalIndex] !== undefined && optIndex === q.correctIndex" class="fa-solid fa-check text-green-600"></i>
+                <i v-if="userSelections[q.originalIndex] === optIndex && optIndex !== q.correctIndex" class="fa-solid fa-xmark text-red-600"></i>
               </button>
             </div>
 
             <!-- Spiegazione immediata -->
-            <div v-if="userSelections[qIndex] !== undefined" class="mt-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-xs border border-gray-200 dark:border-gray-700">
-              <span class="font-bold block mb-1" :class="userSelections[qIndex] === q.correctIndex ? 'text-green-600' : 'text-red-600'">
-                {{ userSelections[qIndex] === q.correctIndex ? 'Corretto! 🎉' : 'Sbagliato ❌' }}
+            <div v-if="userSelections[q.originalIndex] !== undefined" class="mt-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-xs border border-gray-200 dark:border-gray-700">
+              <span class="font-bold block mb-1" :class="userSelections[q.originalIndex] === q.correctIndex ? 'text-green-600' : 'text-red-600'">
+                {{ userSelections[q.originalIndex] === q.correctIndex ? 'Corretto! 🎉' : 'Sbagliato ❌' }}
               </span>
               <p class="text-gray-600 dark:text-gray-300"><b>Spiegazione:</b> {{ q.explanation }}</p>
             </div>
@@ -202,17 +231,33 @@
 
       </div>
 
+      <!-- TAB NOTE & DUBBI -->
+      <div v-show="tab === 'note'" class="space-y-4 h-full flex flex-col">
+        <h2 class="text-xl font-bold">Note Veloci & Dubbi 📝</h2>
+        <p class="text-sm text-gray-500">Scrivi qui formule, concetti difficili o riassunti al volo. Tutto si salva nel cloud in automatico!</p>
+        <textarea 
+          v-model="quickNotes" 
+          @input="triggerSave"
+          placeholder="Scrivi qui i tuoi appunti..." 
+          class="w-full flex-1 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 outline-none focus:ring-2 focus:ring-primary text-sm resize-none min-h-[350px]"
+        ></textarea>
+      </div>
+
     </main>
 
+    <!-- Bottom Navigation Bar a 4 Pulsanti -->
     <nav class="absolute bottom-0 w-full bg-white/80 dark:bg-darkcard/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 flex justify-around p-2 pb-6">
-      <button @click="tab = 'esami'" class="flex flex-col items-center p-2 rounded-xl w-20 transition" :class="tab === 'esami' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
-        <i class="fa-solid fa-book-open text-xl mb-1"></i><span class="text-[10px] font-bold uppercase tracking-wider">Esami</span>
+      <button @click="tab = 'esami'" class="flex flex-col items-center p-2 rounded-xl w-16 transition" :class="tab === 'esami' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
+        <i class="fa-solid fa-book-open text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Esami</span>
       </button>
-      <button @click="tab = 'pomodoro'" class="flex flex-col items-center p-2 rounded-xl w-20 transition" :class="tab === 'pomodoro' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
-        <i class="fa-solid fa-stopwatch text-xl mb-1"></i><span class="text-[10px] font-bold uppercase tracking-wider">Timer</span>
+      <button @click="tab = 'pomodoro'" class="flex flex-col items-center p-2 rounded-xl w-16 transition" :class="tab === 'pomodoro' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
+        <i class="fa-solid fa-stopwatch text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Timer</span>
       </button>
-      <button @click="tab = 'quiz'" class="flex flex-col items-center p-2 rounded-xl w-20 transition" :class="tab === 'quiz' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
-        <i class="fa-solid fa-brain text-xl mb-1"></i><span class="text-[10px] font-bold uppercase tracking-wider">Quiz AI</span>
+      <button @click="tab = 'quiz'" class="flex flex-col items-center p-2 rounded-xl w-16 transition" :class="tab === 'quiz' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
+        <i class="fa-solid fa-brain text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Quiz AI</span>
+      </button>
+      <button @click="tab = 'note'" class="flex flex-col items-center p-2 rounded-xl w-16 transition" :class="tab === 'note' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
+        <i class="fa-solid fa-note-sticky text-lg mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Note</span>
       </button>
     </nav>
   </div>
@@ -220,7 +265,7 @@
   <script type="module">
     import { createApp, ref, reactive, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 
-    // 🔴 INSERISCI QUI LE TUE 3 CHIAVI (Righe 204, 205, 206)
+    // 🟢 CHIAVI INSERITE AUTOMATICAMENTE
     const BIN_ID = '6abcbe4affd5d160533e2cde'; 
     const JSONBIN_API_KEY = '$2a$10$Hcnq4I54QFFlseKRV8s7seNBnsl7agBeCE3nP4o/fbnrflOJn1BAC';
     const GEMINI_API_KEY = 'AQ.Ab8RN6LVC_tBQLoIZdHgdKP9N9IUnrW4YNhz4GOWAPlodlJUAg';
@@ -231,6 +276,8 @@
         const tab = ref('esami');
         
         const exams = ref([]);
+        const quickNotes = ref('');
+        const streakDays = ref(1);
         const loadingDb = ref(true);
         const isSyncing = ref(false);
         const showAddExam = ref(false);
@@ -247,7 +294,7 @@
               await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
-                body: JSON.stringify(exams.value)
+                body: JSON.stringify({ exams: exams.value, notes: quickNotes.value, lastStudy: new Date().toISOString(), streak: streakDays.value })
               });
             } catch(e) { console.error("Errore salvataggio", e); }
             isSyncing.value = false;
@@ -267,7 +314,25 @@
                 headers: { 'X-Master-Key': JSONBIN_API_KEY }
               });
               const data = await res.json();
-              if (data.record && Array.isArray(data.record)) exams.value = data.record;
+              if (data.record) {
+                if (Array.isArray(data.record)) {
+                  exams.value = data.record;
+                } else {
+                  exams.value = data.record.exams || [];
+                  quickNotes.value = data.record.notes || '';
+                  
+                  if (data.record.lastStudy) {
+                    const lastDate = new Date(data.record.lastStudy);
+                    const today = new Date();
+                    const diffTime = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+                    if (diffTime === 0 || diffTime === 1) {
+                      streakDays.value = (data.record.streak || 1) + (diffTime === 1 ? 1 : 0);
+                    } else if (diffTime > 1) {
+                      streakDays.value = 1;
+                    }
+                  }
+                }
+              }
             } catch(e) { console.error("Errore caricamento", e); }
           }
           loadingDb.value = false;
@@ -336,12 +401,12 @@
         const stopPomodoro = () => { pomodoro.value.isRunning = false; clearInterval(pomodoro.value.timer); };
         const resetPomodoro = () => updateTimerMode();
 
-        // QUIZ INTERATTIVO & STATISTICHE LIVE
         const pdfConfig = ref({ start: null, end: null });
         const isProcessingPdf = ref(false);
         const pdfProgress = ref(0);
         const quizQuestions = ref([]);
         const userSelections = reactive({});
+        const reviewingMistakes = ref(false);
 
         const answeredCount = computed(() => Object.keys(userSelections).length);
         
@@ -361,8 +426,20 @@
           return count;
         });
 
+        const displayedQuestions = computed(() => {
+          const mapped = quizQuestions.value.map((q, index) => ({ ...q, originalIndex: index }));
+          if (reviewingMistakes.value) {
+            return mapped.filter(q => userSelections[q.originalIndex] !== undefined && userSelections[q.originalIndex] !== q.correctIndex);
+          }
+          return mapped;
+        });
+
+        const startReviewMistakes = () => { reviewingMistakes.value = true; };
+        const exitReviewMistakes = () => { reviewingMistakes.value = false; };
+
         const resetQuiz = () => {
           quizQuestions.value = [];
+          reviewingMistakes.value = false;
           Object.keys(userSelections).forEach(key => delete userSelections[key]);
         };
 
@@ -390,11 +467,11 @@
         const processAndGenerate = async () => {
           const fileInput = document.getElementById('pdfInput');
           if(!fileInput.files[0]) return alert("Seleziona prima un PDF!");
-          if(GEMINI_API_KEY === 'INSERISCI_QUI_LA_CHIAVE_GEMINI') return alert("Inserisci la chiave API di Gemini nel codice.");
           
           isProcessingPdf.value = true;
           pdfProgress.value = 0;
           quizQuestions.value = [];
+          reviewingMistakes.value = false;
           Object.keys(userSelections).forEach(key => delete userSelections[key]);
 
           try {
@@ -485,10 +562,10 @@ ${extractedText.substring(0, 40000)}`;
         };
 
         return { 
-          isDark, toggleTheme, tab, exams, loadingDb, isSyncing, showAddExam, newExam, addExam, deleteExam, updatePages, getPercentage, getDailyPages,
+          isDark, toggleTheme, tab, exams, quickNotes, streakDays, loadingDb, isSyncing, showAddExam, newExam, addExam, deleteExam, updatePages, getPercentage, getDailyPages, triggerSave,
           pomodoro, formatTime, startPomodoro, stopPomodoro, resetPomodoro, setMode, updateTimerMode,
           pdfConfig, isProcessingPdf, pdfProgress, processAndGenerate, quizQuestions, userSelections, resetQuiz, selectAnswer, getOptionClass,
-          answeredCount, correctCount, wrongCount
+          answeredCount, correctCount, wrongCount, displayedQuestions, reviewingMistakes, startReviewMistakes, exitReviewMistakes
         };
       }
     }).mount('#app');
